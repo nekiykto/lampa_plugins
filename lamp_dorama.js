@@ -3,8 +3,7 @@
 
     /**
      * Дорама / Asian Dramas + Donghua
-     * Версия: 1.2.0 (обновлено: аниме исключено из дорам, топ дунхуа заменен на популярные)
-     * Описание: Подборки популярных дорам + китайская анимация (дунхуа)
+     * Версия: 1.3.0 (Добавлены жанровые подборки: любовь, детективы, фантастика)
      */
 
     var DORAMA_CONFIG = {
@@ -23,6 +22,43 @@
                         "vote_count.gte": "30"
                     }
                 },
+                // --- НОВЫЕ КАТЕГОРИИ ---
+                {
+                    "title": "Легкие дорамы про любовь",
+                    "url": "discover/tv",
+                    "params": {
+                        "with_original_language": "ko|zh|ja",
+                        "with_genres": "10749,35", // Романтика + Комедия
+                        "without_genres": "16",
+                        "sort_by": "vote_average.desc",
+                        "vote_average.gte": "7.5",
+                        "vote_count.gte": "100"
+                    }
+                },
+                {
+                    "title": "Лучшие детективы и мистика",
+                    "url": "discover/tv",
+                    "params": {
+                        "with_original_language": "ko|zh|ja",
+                        "with_genres": "80,9648", // Криминал + Мистика
+                        "without_genres": "16",
+                        "sort_by": "vote_average.desc",
+                        "vote_average.gte": "7.8",
+                        "vote_count.gte": "50"
+                    }
+                },
+                {
+                    "title": "Лучшая фантастика и фэнтези",
+                    "url": "discover/tv",
+                    "params": {
+                        "with_original_language": "ko|zh|ja",
+                        "with_genres": "10765", // Sci-Fi & Fantasy
+                        "without_genres": "16",
+                        "sort_by": "popularity.desc",
+                        "vote_average.gte": "7.5"
+                    }
+                },
+                // -----------------------
                 {
                     "title": "Новые корейские дорамы",
                     "url": "discover/tv",
@@ -36,18 +72,6 @@
                     }
                 },
                 {
-                    "title": "Лучшие дорамы (высокий рейтинг)",
-                    "url": "discover/tv",
-                    "params": {
-                        "with_original_language": "ko|zh|ja",
-                        "with_genres": "18",
-                        "without_genres": "16",
-                        "sort_by": "vote_average.desc",
-                        "vote_average.gte": "7.8",
-                        "vote_count.gte": "200"
-                    }
-                },
-                {
                     "title": "Топ корейских дорам",
                     "url": "discover/tv",
                     "params": {
@@ -57,26 +81,6 @@
                         "sort_by": "vote_average.desc",
                         "vote_average.gte": "8.0",
                         "vote_count.gte": "500"
-                    }
-                },
-                {
-                    "title": "Романтические дорамы",
-                    "url": "discover/tv",
-                    "params": {
-                        "with_original_language": "ko|zh|ja",
-                        "with_genres": "18,10749",
-                        "without_genres": "16",
-                        "sort_by": "popularity.desc"
-                    }
-                },
-                {
-                    "title": "Исторические и фэнтези дорамы",
-                    "url": "discover/tv",
-                    "params": {
-                        "with_original_language": "ko|zh|ja",
-                        "with_genres": "10765,37",
-                        "without_genres": "16",
-                        "sort_by": "popularity.desc"
                     }
                 },
                 {
@@ -101,27 +105,6 @@
                     }
                 },
                 {
-                    "title": "Дорамы на Viki / Rakuten",
-                    "url": "discover/tv",
-                    "params": {
-                        "with_watch_providers": "126",
-                        "watch_region": "RU",
-                        "without_genres": "16",
-                        "sort_by": "popularity.desc"
-                    }
-                },
-                {
-                    "title": "Новые китайские дунхуа",
-                    "url": "discover/tv",
-                    "params": {
-                        "with_original_language": "zh",
-                        "with_genres": "16",
-                        "sort_by": "first_air_date.desc",
-                        "first_air_date.lte": "{current_date}",
-                        "vote_count.gte": "5"
-                    }
-                },
-                {
                     "title": "Популярные китайские дунхуа",
                     "url": "discover/tv",
                     "params": {
@@ -135,17 +118,19 @@
         }
     };
 
+    // Остальная часть логики плагина (DoramaMain, DoramaView, startPlugin) 
+    // остается без изменений, как в предыдущем ответе.
+    // ... [Вставьте сюда функции DoramaMain, DoramaView и startPlugin из прошлого кода] ...
+
     function DoramaMain(object) {
         var comp = new Lampa.InteractionMain(object);
         var config = DORAMA_CONFIG[object.service_id];
-
         comp.create = function () {
             var _this = this;
             this.activity.loader(true);
             var categories = config.categories;
             var network = new Lampa.Reguest();
             var status = new Lampa.Status(categories.length);
-
             status.onComplite = function () {
                 var fulldata = [];
                 Object.keys(status.data).sort(function (a, b) { return a - b; }).forEach(function (key) {
@@ -162,7 +147,6 @@
                         });
                     }
                 });
-
                 if (fulldata.length) {
                     _this.build(fulldata);
                     _this.activity.loader(false);
@@ -170,13 +154,10 @@
                     _this.empty();
                 }
             };
-
             categories.forEach(function (cat, index) {
                 var params = [];
                 params.push('api_key=' + Lampa.TMDB.key());
-                // Изменено на ru
                 params.push('language=' + Lampa.Storage.get('language', 'ru'));
-
                 if (cat.params) {
                     for (var key in cat.params) {
                         var val = cat.params[key];
@@ -187,19 +168,15 @@
                         params.push(key + '=' + val);
                     }
                 }
-
                 var url = Lampa.TMDB.api(cat.url + '?' + params.join('&'));
-
                 network.silent(url, function (json) {
                     status.append(index.toString(), json);
                 }, function () {
                     status.error();
                 });
             });
-
             return this.render();
         };
-
         comp.onMore = function (data) {
             Lampa.Activity.push({
                 url: data.url,
@@ -209,21 +186,17 @@
                 page: 1
             });
         };
-
         return comp;
     }
 
     function DoramaView(object) {
         var comp = new Lampa.InteractionCategory(object);
         var network = new Lampa.Reguest();
-
         function buildUrl(page) {
             var params = [];
             params.push('api_key=' + Lampa.TMDB.key());
-            // Изменено на ru
             params.push('language=' + Lampa.Storage.get('language', 'ru'));
             params.push('page=' + page);
-
             if (object.params) {
                 for (var key in object.params) {
                     var val = object.params[key];
@@ -236,28 +209,23 @@
             }
             return Lampa.TMDB.api(object.url + '?' + params.join('&'));
         }
-
         comp.create = function () {
             var _this = this;
             network.silent(buildUrl(1), function (json) {
                 _this.build(json);
             }, this.empty.bind(this));
         };
-
         comp.nextPageReuest = function (object, resolve, reject) {
             network.silent(buildUrl(object.page), resolve, reject);
         };
-
         return comp;
     }
 
     function startPlugin() {
         if (window.plugin_dorama_ready) return;
         window.plugin_dorama_ready = true;
-
         Lampa.Component.add('dorama_main', DoramaMain);
         Lampa.Component.add('dorama_view', DoramaView);
-
         if (!$('#dorama-css').length) {
             $('body').append(`
                 <style id="dorama-css">
@@ -267,18 +235,14 @@
                 </style>
             `);
         }
-
         function addMenuButton() {
             var menu = $('.menu .menu__list').eq(0);
             if (!menu.length) return;
-
             if (menu.find('.menu__item[data-sid="dorama"]').length) return;
-
             var btn = $(`<li class="menu__item selector" data-action="dorama_action" data-sid="dorama">
                 <div class="menu__ico">${DORAMA_CONFIG.dorama.icon}</div>
                 <div class="menu__text">${DORAMA_CONFIG.dorama.title}</div>
             </li>`);
-
             btn.on('hover:enter', function () {
                 Lampa.Activity.push({
                     title: DORAMA_CONFIG.dorama.title,
@@ -287,12 +251,21 @@
                     page: 1
                 });
             });
-
             menu.append(btn);
         }
-
         if (window.appready) {
             addMenuButton();
         } else {
             Lampa.Listener.follow('app', function (e) {
-                if (e.type
+                if (e.type == 'ready') addMenuButton();
+            });
+        }
+        setInterval(function () {
+            if (window.appready && $('.menu .menu__list').eq(0).length) {
+                addMenuButton();
+            }
+        }, 4000);
+    }
+
+    if (!window.plugin_dorama_ready) startPlugin();
+})();
